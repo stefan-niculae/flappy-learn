@@ -1,0 +1,31 @@
+{
+    "name": "flappy-learn",
+    "version": "1.0.0",
+    "description": "",
+    "author": "Stefan Niculae <hello@stefann.eu>",
+    "main": "index.js",
+    "scripts": {
+        "dev": "webpack",
+        "deploy": "webpack --config webpack.production.config.js"
+    },
+    "license": "MIT",
+    "devDependencies": {
+        "babel-core": "^6.25.0",
+        "babel-eslint": "^7.2.3",
+        "babel-loader": "^7.1.1",
+        "babel-polyfill": "^6.23.0",
+        "babel-preset-env": "^1.6.1",
+        "browser-sync": "^2.18.13",
+        "browser-sync-webpack-plugin": "^1.2.0",
+        "clean-webpack-plugin": "^0.1.17",
+        "copy-webpack-plugin": "^4.2.0",
+        "expose-loader": "^0.7.3",
+        "html-webpack-plugin": "^2.30.1",
+        "webpack": "^3.4.1"
+    },
+    "dependencies": {
+        "mathjs": "^3.17.0",
+        "phaser-ce": "^2.8.3",
+        "webfontloader": "^1.6.28"
+    }
+}
