@@ -1,20 +1,32 @@
 import math from 'mathjs'
-import {zipWith, sum, sigmoid} from './utils'
+import {sigmoid, clone} from './utils'
 
 const INPUT_DIM = 2
 const HIDDEN_DIM = 5
 
-export default class {
+export default class NeuralNetwork {
     /* A single hidden layer, tanh hidden nonlinearly, sigmoid output activation */
 
     constructor() {
-        this.inputWeights  = math.random([INPUT_DIM, HIDDEN_DIM], -1, 1) // uniform
+        this.inputWeights = math.random([INPUT_DIM, HIDDEN_DIM], -1, 1) // uniform
+        this.inputBiases = math.zeros(INPUT_DIM)
+
         this.hiddenWeights = math.random([HIDDEN_DIM, 1], -1, 1) // uniform
+        this.hiddenBiases = math.zeros(HIDDEN_DIM)
     }
 
-    simulate(...input) {
-        const hiddenOutputs = math.tanh(math.multiply(input, this.inputWeights))
-        const finalInput = zipWith(hiddenOutputs, this.hiddenWeights, (o, w) => o * w)
-        return sigmoid(sum(finalInput))
+    simulate(input) {
+        const hiddenOutput = math.tanh(
+            math.add(math.multiply(input, this.inputWeights), this.inputBiases))
+        return sigmoid(
+            math.add(math.multiply(hiddenOutput, this.hiddenWeights), this.hiddenBiases))
+    }
+
+    map(f) {
+        // fmap actually
+        const result = NeuralNetwork()
+        for (let key in result)
+            result[key] = this[key].map(f)
+        return result
     }
 }

@@ -1,15 +1,23 @@
 import {State, Keyboard, Physics} from 'phaser'
+import Bird from './Bird'
 import {randBetween} from './utils'
 
-const N_BIRDS = 1
-const BARRIER_GAP = 150
+const BARRIER_GAP = 275
 const BARRIER_SPEED = 150
-const BARRIER_OFFSET_RANGE = .4
+const BARRIER_OFFSET_RANGE = .3 // center plus/minus this percentage
+
 
 export default class extends State {
     constructor(god) {
         super()
         this.god = god
+    }
+
+    init(prevGeneration) {
+        if (prevGeneration === undefined)
+            this.brains = this.god.initialPopulation()
+        else
+            this.brains = this.god.evolve(prevGeneration)
     }
 
     preload() {
@@ -40,7 +48,11 @@ export default class extends State {
         this.physics.startSystem(Physics.ARCADE)
 
         // Birds
-        this.birds = this.god.makeInitialPopulation(this.game)
+        this.birds = this.brains.map(b => new Bird(this.game, b))
+
+        this.time.events.loop(500, this.makeBirdsThink, this) // let birds think periodically
+        // Will be replaced after each new barrier is created, needed for computation before any barriers
+        this.getNextBarrierCenter = () => ({x: this.game.width, y: this.world.centerY})
 
         // Controls
         const spaceKey = this.input.keyboard.addKey(Keyboard.SPACEBAR)
@@ -72,12 +84,22 @@ export default class extends State {
         hitBirds.forEach(b => b.alive = false) // kill them
     }
 
+    makeBirdsThink() {
+        const nextBarrier = this.getNextBarrierCenter()
+        this.birds.forEach(b => b.think([
+            // preprocess: bring into [-1, +1] range
+            ((nextBarrier.x - b.x) / this.game.width) * 2 - 1, // horiz dist is in (0, +1)
+             (nextBarrier.y - b.y) / this.game.height, // vert ranges from -1 to +1
+        ]))
+    }
+
     endGame() {
         this.time.events.remove(this.barrierTimer)  // no new pipes
         this.barriers.forEach(b => b.body.velocity.x = 0) // stop existing ones
         this.birds.forEach(b => b.body.velocity.x = 0) // stop birds as well
 
-        this.time.events.add(1000, () => this.state.start('default')) // restart after a short delay
+        this.time.events.add(1000, () => // restart after a short delay, remembdering this generation
+            this.state.start('default', true, false, this.birds.map(b => b.brain)))
     }
 
     createSpike(x, y) {
@@ -87,26 +109,26 @@ export default class extends State {
         this.physics.enable(spike)
         spike.body.velocity.x = -BARRIER_SPEED  // move left
 
-        // Kill it when it goes off screen
+        // Kill it when exits left
         spike.checkWorldBounds = true
-        spike.outOfBoundsKill = true
+        spike.events.onOutOfBounds.add(spike.destroy, spike)
 
-        spike.anchor.setTo(.5, .5)
+        spike.anchor.setTo(.5, 0)
         return spike
     }
 
     createBarrier() {
-        const y = this.game.height * randBetween(-BARRIER_OFFSET_RANGE, BARRIER_OFFSET_RANGE)
+        const offsetCoef = randBetween(-BARRIER_OFFSET_RANGE, BARRIER_OFFSET_RANGE)
+        const y = this.game.world.centerY + this.game.height * offsetCoef
         const x = this.game.width
 
         const topSpike = this.createSpike(x, y)
-        topSpike.scale.y = -1 // flip it upside-down
+        topSpike.scale.y = -1 // flip upside-down
         const botSpike = this.createSpike(x, y)
+        topSpike.y -= BARRIER_GAP / 2 // nudge it higher
+        botSpike.y += BARRIER_GAP / 2 // nudge it lower
 
-        const spikeHeight = this.cache.getImage('spike').height
-        topSpike.y -= spikeHeight / 2 + BARRIER_GAP / 2
-        botSpike.y += spikeHeight / 2 + BARRIER_GAP / 2
-        console.log(botSpike.y);
+        this.getNextBarrierCenter = () => ({x: topSpike.x, y}) // y stays the same
 
         // Update score
         this.score++
