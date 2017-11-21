@@ -23,10 +23,9 @@ export default class NeuralNetwork {
     }
 
     map(f) {
-        // fmap actually
-        const result = NeuralNetwork()
-        for (let key in result)
-            result[key] = this[key].map(f)
+        // hello fmap, my old friend
+        const result = clone(this)
+        Object.keys(result).forEach(k => result[k] = this[k].map(f))
         return result
     }
 }
