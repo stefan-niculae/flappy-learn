@@ -25,8 +25,7 @@ export default class GeneticGod {
             GeneticGod.crossover(sample(winners, 2)),
             GeneticGod.crossover(sample(winners, 2)),
         ]
-        const breeded = [...lucky, ...offsprings, winners[0]]
-        const mutated = GeneticGod.mutate(breeded)
+        const mutated = [...lucky, ...offsprings, winners[0]].map(GeneticGod.mutate)
 
         return [...winners, ...mutated]
     }
@@ -40,6 +39,7 @@ export default class GeneticGod {
     }
 
     static crossover([dominant, recessive]) {
+        // TODO check if this is working as intended
         return zipWith(dominant, recessive, (d, r) =>
             bernoulli(CROSSOVER_RATE) ?
                 d :
