@@ -37,7 +37,7 @@ export default class Bird extends Sprite {
         /* Decide whether to jump, based on the environment's state */
         if (!this.alive) // can't think if you're dead, yo!
             return
-        if (this.brain.simulate(envInfo) > .5)
+        if (this.brain.simulate(envInfo))
             this.jump()
     }
 
@@ -47,6 +47,7 @@ export default class Bird extends Sprite {
     }
     
     rememberDeath() {
+        /* The bird's fitness is represented by its age */
         this.brain.age = this.game.time.totalElapsedSeconds()
         this.body.velocity.x = -150 // travel backwards with the barrier
     }
