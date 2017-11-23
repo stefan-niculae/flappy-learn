@@ -9,6 +9,8 @@ const sum = l => l.reduce(add, 0)
 // Statistics
 const randBetween = (a, b) => Math.random() * (b - a) + a
 const sigmoid = x => 1 / (1 + Math.exp(-x))
+const bernoulliPick = (proba, a, b) => Math.random() < proba ? a : b
+const centerInRange = (x, a, b) => 2 * (x-a)/(b-a) - 1  // number of half-ranges from center
 function shuffle(array) {
     /* Fisher-Yates (aka Knuth) Shuffle */
     let currentIndex = array.length
@@ -28,7 +30,6 @@ function shuffle(array) {
     return copy
 }
 const sample = (l, n) => shuffle(l).slice(0, n)
-const bernoulliPick = (proba, a, b) => Math.random() < proba ? a : b
 function multiply(a_, b) {
     const a = [coerce1d(a_)]
     const n = a.length
@@ -54,9 +55,19 @@ function dot(a, b) {
 // Engineering
 const clone = (orig) => Object.assign(Object.create(orig), orig)
 const coerce1d = (a) => a[0].length === undefined ? a : a[0]
+function saveObject(obj, filename) {
+    const text = JSON.stringify(obj, null, 4)
+    const file = new Blob([text], {type: 'text/plain'})
+
+    const a = document.createElement('a')
+    a.href = URL.createObjectURL(file)
+    a.download = filename
+    a.click()
+}
+
 
 export {
     zipWith, range, headTail, sample, add, dot,
-    randBetween, sigmoid, shuffle, bernoulliPick, multiply,
-    clone,
+    randBetween, sigmoid, shuffle, bernoulliPick, multiply, centerInRange,
+    clone, saveObject
 }

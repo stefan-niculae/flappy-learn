@@ -7,9 +7,8 @@ const HIDDEN_DIM = 5
 export default class NeuralNetwork {
     /* A single hidden layer, tanh hidden nonlinearly, sigmoid output activation */
 
-    constructor(name) {
+    constructor() {
         /* Initialize weights randomly and biases to zero */
-        this.name = name
         this.inputWeights = range(INPUT_DIM).map(() =>
             range(HIDDEN_DIM).map(() => randBetween(-1, 1)))
         this.hiddenWeights = range(HIDDEN_DIM).map(() => randBetween(-1, 1)) // uniform
@@ -34,5 +33,9 @@ export default class NeuralNetwork {
         result.hiddenBiases = this.hiddenBiases.map(f)
         result.outputBias = f(this.outputBias)
         return result
+    }
+
+    loadFrom(trained) {
+        Object.keys(this).forEach(k => this[k] = trained[k])
     }
 }

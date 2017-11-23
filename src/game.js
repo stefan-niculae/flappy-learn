@@ -1,16 +1,29 @@
 import {State, Keyboard, Physics} from 'phaser'
 import Bird from './Bird'
-import {randBetween} from './utils'
+import {randBetween, saveObject} from './utils'
 
-const BARRIER_GAP = 350
-const BARRIER_SPEED = 150
+const BARRIER_GAP = 200
+const BARRIER_SPEED = 200
+const BARRIER_FREQ = 2000 // ms
 const BARRIER_OFFSET_RANGE = .3 // center plus/minus this percentage
+
+const DOM_ELEMS = {
+    aliveCounter: document.getElementById('n-alive'),
+    maxScore: document.getElementById('max-score'),
+    populationSize: document.getElementById('total'),
+    generation: document.getElementById('gen-no'),
+
+    saveBtn: document.getElementById('save'),
+    loadBtn: document.getElementById('load'),
+    loadInput: document.getElementById('load-input'),
+}
 
 
 export default class extends State {
     constructor(god) {
         super()
         this.god = god
+        this.maxScore = 0
     }
 
     init(prevGeneration) {
@@ -18,6 +31,9 @@ export default class extends State {
         this.brains = prevGeneration === undefined ?
             this.god.constructor.initialPopulation() :
             this.god.evolve(prevGeneration)
+
+        DOM_ELEMS.generation.textContent = this.god.generationNumber
+        DOM_ELEMS.populationSize.textContent = this.brains.length
     }
 
     preload() {
@@ -25,6 +41,30 @@ export default class extends State {
         this.load.image('background', 'assets/background.png')
         this.load.spritesheet('planes', 'assets/planes.png', 88, 73)
         this.load.image('spike', 'assets/spike.png')
+    }
+
+    create() {
+        /* Setup game logic */
+        this.createBackground() // under everyghing
+        this.physics.startSystem(Physics.ARCADE)
+
+        // Birds
+        this.birds = this.brains.map(b => new Bird(this.game, b))
+        this.time.events.loop(100, this.makeBirdsThink, this) // birds think periodically
+
+        // Controls - for debugging purposes
+        const spaceKey = this.input.keyboard.addKey(Keyboard.SPACEBAR)
+        spaceKey.onDown.add(() => this.birds.forEach(b => b.jump()))
+
+        // Barriers
+        this.barriers = this.add.group()
+        this.barrierTimer = this.time.events.loop(BARRIER_FREQ, this.createBarrier, this)
+
+        this.createScore() // over everything
+        this.createBarrier()
+
+        this.setupButtons()
+        // this.target = this.add.sprite(0, 0, 'target'); this.target.scale.set(.5)
     }
 
     createBackground() {
@@ -36,69 +76,63 @@ export default class extends State {
     createScore() {
         this.score = 0
         this.labelScore = this.add.text(this.world.centerX, this.game.height / 10, '0', {
-            font: 'bold 40px Arial',
+            font: 'bold 40px Open Sans',
             fill: 'white',
-            strokeThickness: 5,
+            strokeThickness: 7,
             boundsAlignH: 'center',
         })
     }
 
-    create() {
-        /* Setup game logic */
-        this.createBackground() // under everyghing
-        this.physics.startSystem(Physics.ARCADE)
+    setupButtons() {
+        DOM_ELEMS.saveBtn.onclick = () => {
+            // TODO: first one at the time of click, not now
+            saveObject(this.birds.filter(b => b.alive)[0], DOM_ELEMS.saveBtn.download)
+            return false
+        }
 
-        // Birds
-        this.birds = this.brains.map(b => new Bird(this.game, b))
-        this.time.events.loop(200, this.makeBirdsThink, this) // birds think periodically
-
-        // Controls - for debugging purposes
-        const spaceKey = this.input.keyboard.addKey(Keyboard.SPACEBAR)
-        spaceKey.onDown.add(() => this.birds.forEach(b => b.jump()))
-
-        // Barriers
-        this.barriers = this.add.group()
-        this.barrierTimer = this.time.events.loop(2000, this.createBarrier, this)
-        // Will be replaced after each new barrier is created,
-        // need one before any barriers are made in order to allow birds to think
-        this.getNextBarrierCenter = () => ({x: this.game.width, y: this.world.centerY})
-
-        this.createScore() // over everything
+        DOM_ELEMS.loadBtn.onclick = () => {
+            DOM_ELEMS.loadInput.click()
+            return false
+        }
+        DOM_ELEMS.loadInput.onchange = e => {
+            const file = e.target.files[0]
+            const reader = new FileReader()
+            reader.onload = e => {
+                const obj = JSON.stringify(e.target.result)
+                console.log(e); // FIXME
+                this.birds.filter(b => b.alive)[0]
+                    .brain.loadFrom(obj)
+            }
+            reader.readAsText(file)
+        }
     }
 
     update() {
         /* Check collisions. Called each frame, 60 times per second */
         const aliveBirds = this.birds.filter(b => b.alive)
+        DOM_ELEMS.aliveCounter.textContent = aliveBirds.length
         if (aliveBirds.length === 0) {
             this.endGame()
             return
         }
 
-        this.bg.tilePosition.x -= .5
+        this.bg.tilePosition.x -= .5 // scroll background
 
         // Barrier collision
         const hitBirds = aliveBirds.filter(b => this.physics.arcade.overlap(b, this.barriers))
-        hitBirds.forEach(b => b.alive = false) // kill them
+        hitBirds.forEach(b => b.die()) // kill them
     }
 
     makeBirdsThink() {
         /* Simulate each bird's brain on (normalized) data about the current environment */
-        const nextBarrier = this.getNextBarrierCenter() // FIXME
-        this.birds.forEach(b => b.think([
-            // preprocess: bring into [-1, +1] range
-            ((nextBarrier.x - b.x) / this.game.width) * 2 - 1, // horiz dist is in (0, +1)
-             (nextBarrier.y - b.y) / this.game.height, // vert ranges from -1 to +1
-        ]))
+        const nextGap = this.getNextGapCenter()
+        this.birds.forEach(b => b.think(nextGap))
+        // this.target.x = nextGap.x; this.target.y = nextGap.y
     }
 
     endGame() {
-        /* Stop objects from moving, pass down current generation */
-        this.time.events.remove(this.barrierTimer)  // no new pipes
-        this.barriers.forEach(b => b.body.velocity.x = 0) // stop existing ones
-        this.birds.forEach(b => b.body.velocity.x = 0) // stop birds as well
-
-        this.time.events.add(1000, () => // restart after a short delay, passing down this generation
-            this.state.start('default', true, false, this.birds.map(b => b.brain)))
+        /* Restart the game, passing down this generation */
+        this.state.start('default', true, false, this.birds.map(b => b.brain))
     }
 
     createSpike(x, y) {
@@ -129,10 +163,18 @@ export default class extends State {
         botSpike.y += BARRIER_GAP / 2 // nudge it lower
 
         // Will be used by the birds' brains
-        this.getNextBarrierCenter = () => ({x: topSpike.x, y}) // y stays the same
+        this.getNextGapCenter = () => ({x: topSpike.x, y}) // y stays the same
 
-        // Update score
+        this.updateScore()
+    }
+
+    updateScore() {
+        /* Ingame and max score */
         this.score++
         this.labelScore.text = this.score
+
+        this.maxScore = Math.max(this.maxScore, this.score)
+        DOM_ELEMS.maxScore.textContent = this.maxScore
     }
+
 }

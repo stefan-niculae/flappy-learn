@@ -1,41 +1,42 @@
-import {sample, range, headTail, randBetween, zipWith, bernoulliPick, clone} from './utils'
+import {sample, range, headTail, randBetween, zipWith, bernoulliPick, clone, saveObject} from './utils'
 import NeuralNetwork from './NeuralNetwork'
 
 const POPULATION_SIZE = 10
 const ELITISM = 4 // number of winners selected
 const LUCKY = 2 // number of not-fittest selected
-
 const CROSSOVER_RATE = .75 // chance of taking from other parent
 const MUTATION_RATE = .2 // chance of suffering a variation
-
-const MIN_FITNESS = 3
+const MIN_FITNESS = 3000 // ms
 
 
 export default class GeneticGod {
     constructor() {
-        this.generationNumber = 0
+        this.generationNumber = 1
     }
 
     static initialPopulation() {
-        return range(POPULATION_SIZE).map(i =>
-            new NeuralNetwork(i))
+        return range(POPULATION_SIZE).map(() => new NeuralNetwork())
     }
 
     evolve(prevGeneration) {
         this.generationNumber++
-        console.log(`Generation number ${this.generationNumber}`)
 
         const [winners, lucky] = GeneticGod.select(prevGeneration)
-        if (winners[0].age < MIN_FITNESS)
-            // even the best is bad. washout this generation and start from scratch
-            return GeneticGod.initialPopulation()
+        const best = winners[0]
 
+        if (best.age < MIN_FITNESS) {
+            // even the best is bad. washout this generation and start from scratch
+            console.info('Wiping out')
+            return GeneticGod.initialPopulation()
+        }
+
+        // TODO change birds color based on where they come from
         const offsprings = [
             GeneticGod.crossover(winners.slice(0, 2)),
             GeneticGod.crossover(sample(winners, 2)),
             GeneticGod.crossover(sample(winners, 2)),
         ]
-        const mutated = [winners[0], ...lucky, ...offsprings].map(GeneticGod.mutate)
+        const mutated = [best, ...lucky, ...offsprings].map(GeneticGod.mutate)
         return [...winners, ...mutated]
     }
 
