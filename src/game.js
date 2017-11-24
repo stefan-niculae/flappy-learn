@@ -2,7 +2,7 @@ import {State, Keyboard, Physics} from 'phaser'
 import Bird from './Bird'
 import {randBetween, saveObject} from './utils'
 
-const BARRIER_GAP = 200
+const BARRIER_GAP = 150
 const BARRIER_SPEED = 200
 const BARRIER_FREQ = 2000 // ms
 const BARRIER_OFFSET_RANGE = .3 // center plus/minus this percentage
@@ -50,7 +50,7 @@ export default class extends State {
 
         // Birds
         this.birds = this.brains.map(b => new Bird(this.game, b))
-        this.time.events.loop(100, this.makeBirdsThink, this) // birds think periodically
+        this.time.events.loop(150, this.makeBirdsThink, this) // birds think periodically
 
         // Controls - for debugging purposes
         const spaceKey = this.input.keyboard.addKey(Keyboard.SPACEBAR)
@@ -61,7 +61,7 @@ export default class extends State {
         this.barrierTimer = this.time.events.loop(BARRIER_FREQ, this.createBarrier, this)
 
         this.createScore() // over everything
-        this.createBarrier()
+        this.createBarrier(true)
 
         this.setupButtons()
         // this.target = this.add.sprite(0, 0, 'target'); this.target.scale.set(.5)
@@ -75,7 +75,7 @@ export default class extends State {
 
     createScore() {
         this.score = 0
-        this.labelScore = this.add.text(this.world.centerX, this.game.height / 10, '0', {
+        this.labelScore = this.add.text(this.world.centerX*.95, this.game.height / 10, '0', {
             font: 'bold 40px Open Sans',
             fill: 'white',
             strokeThickness: 7,
@@ -150,11 +150,13 @@ export default class extends State {
         return spike
     }
 
-    createBarrier() {
+    createBarrier(first) {
         /* Place a pair of spikes at the right edge of the screen, at a random y position */
         const offsetCoef = randBetween(-BARRIER_OFFSET_RANGE, BARRIER_OFFSET_RANGE)
         const y = this.game.world.centerY + this.game.height * offsetCoef
-        const x = this.game.width
+        let x = this.game.width
+        if (first)
+            x *= 2
 
         const topSpike = this.createSpike(x, y)
         topSpike.scale.y = -1 // flip upside-down
@@ -165,7 +167,8 @@ export default class extends State {
         // Will be used by the birds' brains
         this.getNextGapCenter = () => ({x: topSpike.x, y}) // y stays the same
 
-        this.updateScore()
+        if (!first)
+            this.updateScore()
     }
 
     updateScore() {

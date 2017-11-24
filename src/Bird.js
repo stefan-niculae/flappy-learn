@@ -1,13 +1,13 @@
 import {Sprite} from 'phaser'
 import NeuralNetwork from './NeuralNetwork'
-import {centerInRange} from './utils'
+import {centerInRange, randBetween} from './utils'
 
 const HORIZ_OFFSET = 100 // how far from the left edge the bird spawns
 
 
 export default class Bird extends Sprite {
     constructor(game, brain) {
-        super(game, HORIZ_OFFSET, game.world.centerY, 'planes')
+        super(game, HORIZ_OFFSET, game.world.centerY * randBetween(.95, 1.05), 'planes')
         game.add.existing(this)
 
         this.scale.set(.5)
@@ -46,7 +46,8 @@ export default class Bird extends Sprite {
         // Preprocess: bring into [-1, +1] range
         const envInfo = [
             centerInRange(target.x - this.x, HORIZ_OFFSET, this.game.width), // ranges from bird to edge
-            centerInRange(target.y - this.x, 0, this.game.height), // ranges from top to bottom edges
+            centerInRange(target.y - this.y, 0, this.game.height), // ranges from top to bottom edges
+            centerInRange(this.y, 0, this.game.height),
         ]
         if (this.brain.simulate(envInfo))
             this.jump()

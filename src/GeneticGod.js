@@ -14,8 +14,9 @@ export default class GeneticGod {
         this.generationNumber = 1
     }
 
-    static initialPopulation() {
-        return range(POPULATION_SIZE).map(() => new NeuralNetwork())
+    static initialPopulation(size) {
+        const n = size || POPULATION_SIZE
+        return range(n).map(() => new NeuralNetwork())
     }
 
     evolve(prevGeneration) {
@@ -27,7 +28,7 @@ export default class GeneticGod {
         if (best.age < MIN_FITNESS) {
             // even the best is bad. washout this generation and start from scratch
             console.info('Wiping out')
-            return GeneticGod.initialPopulation()
+            return [best, ...GeneticGod.initialPopulation(POPULATION_SIZE - 1)]
         }
 
         // TODO change birds color based on where they come from

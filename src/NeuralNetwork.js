@@ -1,7 +1,7 @@
 import {add, dot, sigmoid, clone, range, randBetween, zipWith, multiply} from './utils'
 
-const INPUT_DIM = 2
-const HIDDEN_DIM = 5
+const INPUT_DIM = 3
+const HIDDEN_DIM = 8
 
 
 export default class NeuralNetwork {
