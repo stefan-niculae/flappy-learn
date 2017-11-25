@@ -54,7 +54,7 @@ module.exports = {
         removeComments: true,
         removeEmptyAttributes: true
       },
-      hash: true
+      // hash: true
     })
   ],
   module: {

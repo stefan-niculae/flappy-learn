@@ -24,7 +24,6 @@
         "webpack": "^3.4.1"
     },
     "dependencies": {
-        "mathjs": "^3.17.0",
         "phaser-ce": "^2.8.3",
         "webfontloader": "^1.6.28"
     }
