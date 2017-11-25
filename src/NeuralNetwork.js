@@ -14,6 +14,8 @@ export default class NeuralNetwork {
         this.hiddenWeights = range(HIDDEN_DIM).map(() => randBetween(-1, 1)) // uniform
         this.hiddenBiases = range(HIDDEN_DIM).fill(0)
         this.outputBias = 0
+
+        this.origin = 'random'
     }
 
     simulate(input) {

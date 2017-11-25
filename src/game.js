@@ -2,9 +2,11 @@ import {State, Physics} from 'phaser'
 import Bird from './Bird'
 import {randBetween, saveObject} from './utils'
 
-const BARRIER_GAP = 200
+const BARRIER_GAP = {
+    start: 300,
+    decay: .99,
+}
 const BARRIER_SPEED = 150
-const BARRIER_OFFSET_RANGE = .3 // center plus/minus this percentage
 
 const DOM_ELEMS = {
     aliveCounter: document.getElementById('n-alive'),
@@ -53,6 +55,7 @@ export default class extends State {
 
         // Barriers
         this.barriers = this.add.group()
+        this.gapSize = BARRIER_GAP.start
         this.time.events.add(2000, this.createBarrier, this) // allow a short period with no barriers
         this.getNextGapCenter = () => ({x: this.game.width, y: this.world.centerY}) // but give them something to chase
 
@@ -68,12 +71,13 @@ export default class extends State {
 
     createScore() {
         this.score = 0
-        this.labelScore = this.add.text(this.world.centerX*.95, this.game.height / 10, '0', {
-            font: 'bold 40px Open Sans',
+        this.labelScore = this.add.text(0, 0, '0', {
+            font: 'bold 40px Open Sans, sans-serif',
             fill: 'white',
             strokeThickness: 7,
             boundsAlignH: 'center',
-        })
+        })//8c 9m 10l 22c
+        this.labelScore.setTextBounds(0, this.game.height / 10, this.game.width)
     }
 
     setupCheckpointButtons() {
@@ -147,21 +151,21 @@ export default class extends State {
         spike.checkWorldBounds = true
         spike.events.onOutOfBounds.add(spike.destroy, spike)
 
-        spike.anchor.setTo(.5, 0)
         return spike
     }
 
     createBarrier() {
         /* Place a pair of spikes at the right edge of the screen, at a random y position */
-        const offsetCoef = randBetween(-BARRIER_OFFSET_RANGE, BARRIER_OFFSET_RANGE)
-        const y = this.game.world.centerY + this.game.height * offsetCoef
+        const y = this.game.height * randBetween(.25, .75)
         let x = this.game.width
 
         const topSpike = this.createSpike(x, y)
         topSpike.scale.y = -1 // flip upside-down
         const botSpike = this.createSpike(x, y)
-        topSpike.y -= BARRIER_GAP / 2 // nudge it higher
-        botSpike.y += BARRIER_GAP / 2 // nudge it lower
+
+        this.gapSize *= BARRIER_GAP.decay
+        topSpike.y -= this.gapSize / 2 // nudge it higher
+        botSpike.y += this.gapSize / 2 // nudge it lower
 
         // Will be used by the birds' brains
         this.getNextGapCenter = () => ({x: topSpike.x, y}) // y stays the same

@@ -19,11 +19,7 @@ export default class GeneticGod {
 
     static initialPopulation(size) {
         const n = size || POPULATION_SIZE
-        return range(n).map(() => {
-            const nn = new NeuralNetwork()
-            nn.origin = 'random'
-            return nn
-        })
+        return range(n).map(() => new NeuralNetwork())
     }
 
     evolve(prevGeneration) {
@@ -39,7 +35,7 @@ export default class GeneticGod {
         const offsprings = [
             GeneticGod.crossover(winners.slice(0, 2)),
             GeneticGod.crossover(sample(winners, 2)),
-            GeneticGod.crossover(sample(winners, 2)),
+            GeneticGod.crossover(sample(prevGeneration, 2)),
         ]
         const mutated = [best, ...lucky, ...offsprings].map(GeneticGod.mutate)
         return [...winners, ...mutated, ...GeneticGod.initialPopulation(N_RANDOM)]
@@ -70,7 +66,7 @@ export default class GeneticGod {
     static mutate(genome) {
         /* Apply random variations to some weights */
         return genome.map(w => bernoulliPick(
-            MUTATION_RATE, w, w + randBetween(-.5, .5))
+            MUTATION_RATE, w, w * randBetween(.85, 1.15) + randBetween(-.2, .2))
         )
     }
 }
