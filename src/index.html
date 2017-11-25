@@ -21,7 +21,7 @@
     }
     #game-info div {
       display: inline-block;
-      width: 125px;
+      width: 32.5%;
     }
     #game-info span {
       font-weight: bold;
@@ -42,11 +42,28 @@
       box-shadow: 0 0 15px 3px rgba(0,0,0, 0.15)
     }
 
-    #save-buttons {
-      text-align: center;
-      padding: 20px
+    #color-desc {
+      padding: 20px 20px 50px;
+      font-weight: 600;
+      justify-content: space-evenly;
     }
-    #save-buttons > a {
+    #color-desc span {
+      width: 24%;
+      display: inline-block;
+    }
+
+    hr {
+      width: 80%;
+      margin: 10px auto;
+      border: none;
+      border-top: 1px solid #eee;
+    }
+
+    #transplant-buttons {
+      text-align: center;
+      padding: 3px
+    }
+    #transplant-buttons > a {
       margin: 0 10px;
       color: #7b7b7b;
     }
@@ -60,11 +77,17 @@
     <div id="gen">Gen <span id="gen-no">0</span></div>
     <div id="score">Max <span id="max-score">0</span></div>
     <div id="alive"><span id="n-alive">5</span>/<span id="total">10</span> Alive</div>
-    <div class="clearfix"></div>
   </div>
   <div id="game"></div>
-  <div id="save-buttons">
-    <a id="save" href="#" download="champion.json">save</a>
+  <div id="color-desc">
+    <span style="color: #c10000;">fittest</span>
+    <span style="color: #ffa900">lucky</span>
+    <span style="color: #6190e5">random</span>
+    <span style="color: #008d00;">crossover</span>
+  </div>
+  <hr>
+  <div id="transplant-buttons">
+    <a id="save" href="#" download="champion.json">save</a> /
     <a id="load" href="#">load</a>
     <input id="load-input" type="file" style="display: none">
   </div>

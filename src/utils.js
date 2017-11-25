@@ -55,19 +55,10 @@ function dot(a, b) {
 // Engineering
 const clone = (orig) => Object.assign(Object.create(orig), orig)
 const coerce1d = (a) => a[0].length === undefined ? a : a[0]
-function saveObject(obj, filename) {
-    const text = JSON.stringify(obj, null, 4)
-    const file = new Blob([text], {type: 'text/plain'})
-
-    const a = document.createElement('a')
-    a.href = URL.createObjectURL(file)
-    a.download = filename
-    a.click()
-}
 
 
 export {
     zipWith, range, headTail, sample, add, dot,
     randBetween, sigmoid, shuffle, bernoulliPick, multiply, centerInRange,
-    clone, saveObject
+    clone
 }

@@ -1,12 +1,15 @@
-import {sample, range, headTail, randBetween, zipWith, bernoulliPick, clone, saveObject} from './utils'
+import {sample, range, headTail, randBetween, zipWith, bernoulliPick, clone} from './utils'
 import NeuralNetwork from './NeuralNetwork'
 
 const POPULATION_SIZE = 10
-const ELITISM = 4 // number of winners selected
-const LUCKY = 2 // number of not-fittest selected
+const MIN_FITNESS = 5000 // ms
+
+const ELITISM = 3 // number of winners selected
+const N_LUCKY = 2 // number of not-fittest selected
+const N_RANDOM = 1
+
 const CROSSOVER_RATE = .75 // chance of taking from other parent
 const MUTATION_RATE = .2 // chance of suffering a variation
-const MIN_FITNESS = 3000 // ms
 
 
 export default class GeneticGod {
@@ -16,7 +19,11 @@ export default class GeneticGod {
 
     static initialPopulation(size) {
         const n = size || POPULATION_SIZE
-        return range(n).map(() => new NeuralNetwork())
+        return range(n).map(() => {
+            const nn = new NeuralNetwork()
+            nn.origin = 'random'
+            return nn
+        })
     }
 
     evolve(prevGeneration) {
@@ -25,27 +32,27 @@ export default class GeneticGod {
         const [winners, lucky] = GeneticGod.select(prevGeneration)
         const best = winners[0]
 
-        if (best.age < MIN_FITNESS) {
+        if (best.age < MIN_FITNESS)
             // even the best is bad. washout this generation and start from scratch
-            console.info('Wiping out')
             return [best, ...GeneticGod.initialPopulation(POPULATION_SIZE - 1)]
-        }
 
-        // TODO change birds color based on where they come from
         const offsprings = [
             GeneticGod.crossover(winners.slice(0, 2)),
             GeneticGod.crossover(sample(winners, 2)),
             GeneticGod.crossover(sample(winners, 2)),
         ]
         const mutated = [best, ...lucky, ...offsprings].map(GeneticGod.mutate)
-        return [...winners, ...mutated]
+        return [...winners, ...mutated, ...GeneticGod.initialPopulation(N_RANDOM)]
     }
 
     static select(population) {
         /* The survivors are the fittest plus some lucky ones */
-        const sorted = population.sort((a, b) => a.age - b.age)
+        const sorted = population.sort((a, b) => b.age - a.age) // largest first
         const [fittest, rest] = headTail(sorted, ELITISM)
-        const lucky = sample(rest, LUCKY)
+        const lucky = sample(rest, N_LUCKY)
+
+        fittest.forEach(f => f.origin = 'fit')
+        lucky.forEach(l => l.origin = 'lucky')
         return [fittest, lucky]
     }
 
@@ -55,6 +62,8 @@ export default class GeneticGod {
         offspring.hiddenBiases = zipWith(dominant.hiddenBiases, recessive.hiddenBiases,
             (d, r) => bernoulliPick(CROSSOVER_RATE, d, r)
         )
+
+        offspring.origin = 'crossover'
         return offspring
     }
 
